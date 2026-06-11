@@ -1,0 +1,57 @@
+# Define the directory containing SAM files
+READ_DIR = "Data/sam/big"
+
+# Automatically detect samples from filenames
+SAMPLES, = glob_wildcards(f"{READ_DIR}/{{sample}}.sam")
+
+rule all:
+    input:
+        expand("results/stats/{sample}.txt", sample=SAMPLES),
+        expand("results/filtered/{sample}_filtered.bam", sample=SAMPLES)
+
+# Step 1: Convert SAM to BAM
+rule sam_to_bam:
+    input:
+        f"{READ_DIR}/{{sample}}.sam"
+    output:
+        "results/bam/{sample}.bam"
+    shell:
+        "samtools view -bS {input} > {output}"
+
+# Step 2: Sort BAM file
+rule sort_bam:
+    input:
+        "results/bam/{sample}.bam"
+    output:
+        "results/bam_sorted/{sample}.sorted.bam"
+    shell:
+        "samtools sort {input} -o {output}"
+
+# Step 3: Create index for sorted BAM
+rule index_bam:
+    input:
+        "results/bam_sorted/{sample}.sorted.bam"
+    output:
+        "results/bam_sorted/{sample}.sorted.bam.bai"
+    shell:
+        "samtools index {input}"
+
+# Step 4: Calculate mapping statistics
+rule idxstats:
+    input:
+        bam="results/bam_sorted/{sample}.sorted.bam",
+        bai="results/bam_sorted/{sample}.sorted.bam.bai"
+    output:
+        "results/stats/{sample}.txt"
+    shell:
+        "samtools idxstats {input.bam} > {output}"
+
+# Step 5: Filter specific references
+rule filter_refs:
+    input:
+        bam="results/bam_sorted/{sample}.sorted.bam",
+        bai="results/bam_sorted/{sample}.sorted.bam.bai"
+    output:
+        "results/filtered/{sample}_filtered.bam"
+    shell:
+        "samtools view -b {input.bam} NZ_AMKI01000040.1 NZ_AMKI01000041.1 > {output}"

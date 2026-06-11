@@ -1,0 +1,29 @@
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+# Load sample table. It must contain: sample, fq1, fq2, group
+samples = pd.read_csv(config["samples"], sep="\t", index_col="sample")
+
+SAMPLES = samples.index.tolist()
+GROUPS = samples["group"].drop_duplicates().tolist()
+
+# Input functions for paired-end FASTQ files from samples.tsv
+def get_fq1(wildcards):
+    return samples.at[wildcards.sample, "fq1"]
+
+def get_fq2(wildcards):
+    return samples.at[wildcards.sample, "fq2"]
+
+def idxstats_for_group(wildcards):
+    group_samples = samples.index[samples["group"] == wildcards.group].tolist()
+    return expand("results/stats/{sample}.stats", sample=group_samples)
+
+rule all:
+    input:
+        "results/stats/idxstats_summary.tsv",
+        expand("results/groupwise/agg_group_{group}.tsv", group=GROUPS),
+        expand("results/filtered/{sample}_filtered.bam", sample=SAMPLES)
+
+include: "rules/bowtie.smk"
+include: "rules/samtools.smk"

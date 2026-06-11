@@ -1,0 +1,9 @@
+# Path to the sample table. The table contains the columns: sample, fq1, fq2, group
+samples: "config/samples.tsv"
+
+# Path to the reference FASTA file used for bowtie2 mapping
+ref: "../Data/reference/reference.fa"
+
+# Bowtie2 parameters used in rule bowtie2_map
+bt2_preset: "--very-sensitive"
+bt2_extra: "--no-unal"

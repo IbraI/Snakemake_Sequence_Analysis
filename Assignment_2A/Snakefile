@@ -1,0 +1,87 @@
+import pandas as pd
+
+# SET PATHS
+FASTQ_DIR = "../Data/fastq/big"
+REF_GENOME = "../Data/reference/reference.fa"
+REF_INDEX = "../Data/reference/reference"
+
+# IDENTIFY SAMPLES
+SAMPLES, = glob_wildcards(f"{FASTQ_DIR}/{{sample}}_1.fastq.gz")
+
+rule all:
+    input:
+        "results/final_summary.tsv",
+        expand("results/filtered/{sample}_filtered.bam", sample=SAMPLES)
+
+# BUILD BOWTIE2 INDEX
+rule bowtie2_build:
+    input:
+        REF_GENOME
+    output:
+        multiext(REF_INDEX, ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2", ".rev.2.bt2")
+    shell:
+        "bowtie2-build {input} {REF_INDEX}"
+
+# MAPPING
+rule bowtie2_map:
+    input:
+        r1 = f"{FASTQ_DIR}/{{sample}}_1.fastq.gz",
+        r2 = f"{FASTQ_DIR}/{{sample}}_2.fastq.gz",
+        idx = multiext(REF_INDEX, ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2", ".rev.2.bt2")
+    output:
+        "results/sam/{sample}.sam"
+    shell:
+        "bowtie2 -x {REF_INDEX} -1 {input.r1} -2 {input.r2} -S {output}"
+
+# CONVERT SAM TO BAM
+rule sam_to_bam:
+    input: "results/sam/{sample}.sam"
+    output: "results/bam/{sample}.bam"
+    shell: "samtools view -bS {input} > {output}"
+
+# SORT BAM
+rule sort_bam:
+    input: "results/bam/{sample}.bam"
+    output: "results/bam_sorted/{sample}.sorted.bam"
+    shell: "samtools sort {input} -o {output}"
+
+# INDEX BAM
+rule index_bam:
+    input: "results/bam_sorted/{sample}.sorted.bam"
+    output: "results/bam_sorted/{sample}.sorted.bam.bai"
+    shell: "samtools index {input}"
+
+# GENERATE STATS
+rule idxstats:
+    input:
+        bam="results/bam_sorted/{sample}.sorted.bam",
+        bai="results/bam_sorted/{sample}.sorted.bam.bai"
+    output:
+        "results/stats/{sample}.txt"
+    shell:
+        "samtools idxstats {input.bam} > {output}"
+
+# AGGREGATE RESULTS with Pandas
+rule aggregate_stats:
+    input:
+        files = expand("results/stats/{sample}.txt", sample=SAMPLES)
+    output:
+        "results/final_summary.tsv"
+    run:
+        results = []
+        for f, name in zip(input.files, SAMPLES):
+            df = pd.read_csv(f, sep="\t", names=["ref_id", "length", name, "unmapped"])
+            results.append(df.set_index(["ref_id", "length"])[[name]])
+        
+        final_df = pd.concat(results, axis=1).reset_index()
+        final_df.to_csv(output[0], sep="\t", index=False)
+
+# 10. FILTERING
+rule filter_refs:
+    input:
+        bam="results/bam_sorted/{sample}.sorted.bam",
+        bai="results/bam_sorted/{sample}.sorted.bam.bai"
+    output:
+        "results/filtered/{sample}_filtered.bam"
+    shell:
+        "samtools view -b {input.bam} NZ_AMKI01000040.1 NZ_AMKI01000041.1 > {output}"

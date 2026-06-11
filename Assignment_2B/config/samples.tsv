@@ -1,0 +1,7 @@
+sample	fq1	fq2	group
+ERR024604	../Data/fastq/tiny/ERR024604_tiny_1.fastq.gz	../Data/fastq/tiny/ERR024604_tiny_2.fastq.gz	A
+ERR024605	../Data/fastq/tiny/ERR024605_tiny_1.fastq.gz	../Data/fastq/tiny/ERR024605_tiny_2.fastq.gz	A
+ERR024606	../Data/fastq/tiny/ERR024606_tiny_1.fastq.gz	../Data/fastq/tiny/ERR024606_tiny_2.fastq.gz	B
+ERR024607	../Data/fastq/tiny/ERR024607_tiny_1.fastq.gz	../Data/fastq/tiny/ERR024607_tiny_2.fastq.gz	B
+ERR024608	../Data/fastq/tiny/ERR024608_tiny_1.fastq.gz	../Data/fastq/tiny/ERR024608_tiny_2.fastq.gz	C
+ERR024609	../Data/fastq/tiny/ERR024609_tiny_1.fastq.gz	../Data/fastq/tiny/ERR024609_tiny_2.fastq.gz	C

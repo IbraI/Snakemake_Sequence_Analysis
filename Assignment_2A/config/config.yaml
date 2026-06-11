@@ -1,0 +1,5 @@
+samples: "config/samples.tsv"
+ref: "../Data/reference/reference.fa"
+ref_index: "../Data/reference/reference"
+bt2_preset: "--very-fast"
+bt2_mode: "--no-unal"

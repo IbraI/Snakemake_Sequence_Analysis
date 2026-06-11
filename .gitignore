@@ -1,0 +1,12 @@
+results/
+logs/
+.snakemake/
+data/
+results.tar.gz
+pipeline.log
+dag.pdf
+rulegraph.pdf
+*.zip
+*.tar.gz
+Data/
+data.zip
