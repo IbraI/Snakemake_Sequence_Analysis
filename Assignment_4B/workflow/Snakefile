@@ -1,0 +1,96 @@
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+samples = pd.read_csv(config["samples"], sep="\t", index_col="sample")
+SAMPLES = samples.index.tolist()
+READS = ["1", "2"]
+
+SKIP_FASTQC = config.get("skip_fastQC", False)
+SKIP_PREPROCESSING = config.get("skip_preprocessing", False)
+RUN_DENOVO = config.get("run_denovo_assembly", True)
+RUN_REFERENCE = config.get("run_reference_assembly", True)
+ASSEMBLY_FOR_PHYLOGENY = config.get("assembly_for_phylogeny", "reference")
+
+if ASSEMBLY_FOR_PHYLOGENY not in ["reference", "denovo"]:
+    raise ValueError("config['assembly_for_phylogeny'] must be either 'reference' or 'denovo'.")
+
+if ASSEMBLY_FOR_PHYLOGENY == "reference" and not RUN_REFERENCE:
+    raise ValueError("assembly_for_phylogeny is 'reference', but run_reference_assembly is False.")
+
+if ASSEMBLY_FOR_PHYLOGENY == "denovo" and not RUN_DENOVO:
+    raise ValueError("assembly_for_phylogeny is 'denovo', but run_denovo_assembly is False.")
+
+
+def cleaned_read(sample, read):
+    if SKIP_PREPROCESSING:
+        return samples.at[sample, f"fq{read}"]
+    return f"results/fastp/{sample}_{read}.fastq.gz"
+
+
+def selected_assembly(sample):
+    if ASSEMBLY_FOR_PHYLOGENY == "reference":
+        return f"results/assembly/reference/{sample}.fasta"
+    return f"results/assembly/denovo/{sample}.fasta"
+
+
+def final_targets():
+    targets = [
+        "results/phylogeny/aligned_genomes.fasta",
+        "results/phylogeny/tree.nwk",
+        "results/phylogeny/tree.pdf",
+        "results/variability/window_variability.tsv",
+        "results/variability/variability_plot.png",
+        "results/multiqc/multiqc_report.html",
+    ]
+
+    if RUN_DENOVO:
+        targets += expand(
+            "results/assembly/denovo/{sample}.fasta",
+            sample=SAMPLES
+        )
+
+        targets += expand(
+            "results/quast/denovo/{sample}",
+            sample=SAMPLES
+        )
+
+    if RUN_REFERENCE:
+        targets += expand(
+            "results/assembly/reference/{sample}.fasta",
+            sample=SAMPLES
+        )
+
+        targets += expand(
+            "results/quast/reference/{sample}",
+            sample=SAMPLES
+        )
+
+        targets += expand(
+            "results/mapping_qc/{sample}.flagstat.txt",
+            sample=SAMPLES
+        )
+
+        targets += expand(
+            "results/qualimap/{sample}",
+            sample=SAMPLES
+        )
+
+    if not SKIP_FASTQC:
+        targets.append(
+            "results/multiqc_raw/raw_fastqc_multiqc.html"
+        )
+
+    return targets
+
+
+rule all:
+    input:
+        final_targets()
+
+include: "rules/qc.smk"
+include: "rules/denovo_assembly.smk"
+include: "rules/assembly_qc.smk"
+include: "rules/reference_assembly.smk"
+include: "rules/phylogeny.smk"
+include: "rules/variability.smk"

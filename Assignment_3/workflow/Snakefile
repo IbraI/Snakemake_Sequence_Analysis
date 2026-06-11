@@ -1,0 +1,35 @@
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+# Load sample table. It must contain the columns: sample, fq1, fq2
+samples = pd.read_csv(config["samples"], sep="\t", index_col="sample")
+
+SAMPLES = samples.index.tolist()
+READS = ["1", "2"]
+
+# Optional partt of the task: QC/preprocessing. Default: False for all three.
+SKIP_TRIMMING = config.get("skip_trimming", False)
+SKIP_FASTQC = config.get("skip_fastQC", False)
+SKIP_QUALIMAP = config.get("skip_qualimap", False)
+
+
+def final_targets():
+    targets = [
+        "results/stats/idxstats_summary.tsv",
+        "results/multiqc/multiqc_report.html",
+    ]
+
+    if not SKIP_FASTQC:
+        targets.append("results/multiqc_raw/raw_fastqc_multiqc.html")
+
+    return targets
+
+
+rule all:
+    input:
+        final_targets()
+
+include: "rules/qc.smk"
+include: "rules/bowtie.smk"
+include: "rules/samtools.smk"

@@ -1,0 +1,22 @@
+# Path to the sample table. The table contains the columns: sample, fq1, fq2
+samples: "config/samples.tsv"
+
+# Path to the reference FASTA file used for bowtie2 mapping
+ref: "../Data/reference/reference.fa"
+
+# Bowtie2 parameters used in rule bowtie2_map as suggested by the feedback 
+bowtie2:
+  N: 1
+  L: 30
+  D: 15
+  R: 2
+
+# Optional in the task: QC/preprocessing changes
+skip_trimming: False
+skip_fastQC: False
+skip_qualimap: False
+
+# Trimmomatic settings
+# Adapter file is shipped with the workflow in resources/adapters/
+trimmomatic_adapter: "resources/adapters/TruSeq3-PE.fa"
+trimmomatic_options: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"
