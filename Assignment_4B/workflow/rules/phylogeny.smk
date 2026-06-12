@@ -38,7 +38,7 @@ rule iqtree:
         "../envs/phylogeny.yaml"
     shell:
         "mkdir -p results/phylogeny/iqtree && "
-        "iqtree2 -s {input} -m MFP -B 1000 -T {threads} --prefix results/phylogeny/iqtree/aligned_genomes.fasta > {log} 2>&1 && "
+        "iqtree2 -s {input} -m MFP -B 1000 -T {threads} -redo --prefix results/phylogeny/iqtree/aligned_genomes.fasta > {log} 2>&1 && "
         "cp {output.treefile} {output.nwk}"
 
 

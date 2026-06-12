@@ -114,8 +114,6 @@ rule multiqc_full:
                 "results/quast/denovo/{sample}",
                 sample=SAMPLES
             ) if RUN_DENOVO else [])
-            + ["results/phylogeny/tree.nwk"]
-            + ["results/variability/window_variability.tsv"]
         )
     output:
         "results/multiqc/multiqc_report.html"
@@ -124,4 +122,5 @@ rule multiqc_full:
     conda:
         "../envs/qc.yaml"
     shell:
-        "multiqc results logs -o results/multiqc -n multiqc_report.html > {log} 2>&1"
+        "multiqc results logs -o results/multiqc -n multiqc_report.html --force > {log} 2>&1"
+        

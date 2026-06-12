@@ -46,8 +46,7 @@ rule sam_to_sorted_bam:
     conda:
         "../envs/assembly.yaml"
     shell:
-        "samtools view -@ {threads} -bS {input} 2> {log} | "
-        "samtools sort -@ {threads} -o {output} - 2>> {log}"
+        "samtools sort -@ {threads} -o {output} {input} 2> {log}"
 
 
 rule index_sorted_bam:
@@ -75,10 +74,13 @@ rule reference_consensus:
     threads: 4
     conda:
         "../envs/assembly.yaml"
+    params:
+        min_depth=config.get("consensus", {}).get("min_depth", 5)
     shell:
         "samtools consensus "
         "-f fasta "
+        "-d {params.min_depth} "
         "{input.bam} "
         "> {output} "
-        "2> {log}"
+        "2> {log}"    
 

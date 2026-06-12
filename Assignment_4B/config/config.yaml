@@ -29,6 +29,10 @@ fastp:
 bwa_mem2:
   extra: ""
 
+# Allowing the user to choose a minimum depth for samtools consensus
+consensus:
+  min_depth: 5
+
 # SPAdes de novo assembly parameters.
 spades:
   extra: "--careful --phred-offset 33"

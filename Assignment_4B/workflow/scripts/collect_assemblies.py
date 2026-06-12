@@ -12,9 +12,16 @@ with out.open("w") as handle_out:
         if not records:
             raise ValueError(f"No FASTA records found in {fasta_path}")
 
-        # Use the longest contig/sequence as the representative assembled genome.
-        # For reference-based consensus FASTA files, this will normally be the full consensus genome.
-        record = max(records, key=lambda rec: len(rec.seq))
+        ragtag_records = [rec for rec in records if "_RagTag" in rec.id]
+
+        if ragtag_records:
+            # For RagTag scaffolded de novo assemblies, use the scaffolded sequence
+            # identified by the RagTag header 
+            record = max(ragtag_records, key=lambda rec: len(rec.seq))
+        else:
+            # For reference-based consensus FASTA files, there is normally one full genome.
+            record = max(records, key=lambda rec: len(rec.seq))
+
         record.id = sample
         record.name = sample
         record.description = sample
